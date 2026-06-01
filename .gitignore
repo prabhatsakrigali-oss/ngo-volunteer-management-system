@@ -5,3 +5,5 @@ uploads/
 server_backup.js
 server_backup_server.js
 server_mixed_backup.js
+
+public/resumes/
