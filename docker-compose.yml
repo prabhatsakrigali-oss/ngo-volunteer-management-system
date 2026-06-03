@@ -1,0 +1,26 @@
+services:
+  app:
+    build: .
+    container_name: ngo-app
+
+    ports:
+      - "3000:3000"
+
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/ngo-website
+
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:latest
+
+    container_name: ngo-mongo
+
+   
+
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
