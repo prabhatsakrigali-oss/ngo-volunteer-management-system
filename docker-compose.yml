@@ -6,6 +6,9 @@ services:
     ports:
       - "3000:3000"
 
+    env_file:
+      - .env
+
     environment:
       - MONGO_URI=mongodb://mongo:27017/ngo-website
 
@@ -14,10 +17,7 @@ services:
 
   mongo:
     image: mongo:latest
-
     container_name: ngo-mongo
-
-   
 
     volumes:
       - mongo-data:/data/db
