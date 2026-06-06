@@ -12,6 +12,10 @@ services:
     environment:
       - MONGO_URI=mongodb://mongo:27017/ngo-website
 
+    volumes:
+      - ./public/uploads:/app/public/uploads
+      - ./public/resumes:/app/public/resumes
+
     depends_on:
       - mongo
 
