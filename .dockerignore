@@ -1,7 +1,15 @@
 node_modules
 .git
+.github
 .env
+
 uploads
+
+npm-debug.log
+
+Dockerfile
+docker-compose.yml
+README.md
 
 server_backup.js
 server_backup_server.js
