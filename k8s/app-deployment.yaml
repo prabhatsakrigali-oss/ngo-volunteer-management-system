@@ -6,7 +6,7 @@ metadata:
   namespace: ngo
 
 spec:
-  replicas: 2
+  replicas: 1
 
   selector:
     matchLabels:
@@ -21,7 +21,7 @@ spec:
       containers:
       - name: ngo-website
 
-        image: ngo-website:latest
+        image: ngo-website:v2.2
 
         imagePullPolicy: Never
 
@@ -36,8 +36,32 @@ spec:
               name: ngo-config
               key: PORT
 
+        - name: BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ngo-config
+              key: BASE_URL
+
         - name: MONGO_URI
           valueFrom:
             secretKeyRef:
               name: ngo-secret
               key: MONGO_URI
+
+        - name: EMAIL_USER
+          valueFrom:
+            secretKeyRef:
+              name: ngo-secret
+              key: EMAIL_USER
+
+        - name: EMAIL_PASS
+          valueFrom:
+            secretKeyRef:
+              name: ngo-secret
+              key: EMAIL_PASS
+
+        - name: SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: ngo-secret
+              key: SESSION_SECRET

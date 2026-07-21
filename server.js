@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 
 const Admin = require("./models/Admin");
+const seedAdmin = require("./seedAdmin");
 
 const express = require("express");
 const mongoose = require("mongoose");
@@ -50,6 +51,7 @@ const storage = multer.diskStorage({
     destination: function (req, file, cb) {
 
         cb(null, "public/uploads");
+
 
     },
 
@@ -112,7 +114,18 @@ const transporter = nodemailer.createTransport({
 
 
 //==================================
-connectDB();
+(async () => {
+    try {
+        await connectDB();
+        console.log("✅ Database Connected");
+
+        await seedAdmin();
+
+    } catch (err) {
+        console.error("❌ Startup Error:", err);
+        process.exit(1);
+    }
+})();
 
 const app = express();
 
@@ -122,7 +135,8 @@ app.use(express.json());
 
 app.use(session({
 
-    secret: "ngo-secret-key",
+
+    secret: process.env.SESSION_SECRET,
 
     resave: false,
 
@@ -189,8 +203,9 @@ const checkRole = (allowedRoles) => {
 };
 
 
-//==========================================================
+//============================================= isAdminLoggedIn =============
 const isAdminLoggedIn = (req, res, next) => {
+
 
     if (req.session.userId) {
 
@@ -198,18 +213,22 @@ const isAdminLoggedIn = (req, res, next) => {
 
     } else {
 
-       res.redirect("/login");
+        console.log("❌ User NOT Logged In");
+        return res.redirect("/login");
 
     }
 
 };
 
-//=======================================
+//======================================= allowRoles ====================================
 const allowRoles = (...roles) => {
 
     return (req, res, next) => {
 
+
         if (!req.session.role) {
+
+            console.log("❌ No Role Found");
 
             return res.redirect("/login");
 
@@ -217,9 +236,11 @@ const allowRoles = (...roles) => {
 
         if (roles.includes(req.session.role)) {
 
-            next();
+            return next();
 
         } else {
+
+            console.log("❌ Access Denied");
 
             return res.send(`
 
@@ -347,7 +368,7 @@ app.post(
 
         await transporter.sendMail({
 
-            from: "prabhatsakrigali@gmail.com",
+            from: process.env.EMAIL_USER,
 
             to: "prabhatsakrigali@gmail.com",
 
@@ -381,7 +402,7 @@ app.post(
 
 });
 
-//=======================Register==========================
+//=================================================================Register==========================
 app.get("/register", isAdminLoggedIn, allowRoles("Admin"), (req, res) => {
 
     res.render("register");
@@ -390,11 +411,11 @@ app.get("/register", isAdminLoggedIn, allowRoles("Admin"), (req, res) => {
 
 app.post("/register", isAdminLoggedIn, allowRoles("Admin"), async (req, res) => {
 
-    try {
+       try {
 
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
 
-        const newAdmin = new Admin({
+            const newAdmin = new Admin({
 
             email: req.body.email,
 
@@ -404,21 +425,21 @@ app.post("/register", isAdminLoggedIn, allowRoles("Admin"), async (req, res) => 
 
         await newAdmin.save();
 
-         req.flash("success", "Registration Successful");
+        req.flash("success", "Registration Successful");
 
-         res.redirect("/login");
+        return res.redirect("/login");
 
     } catch (error) {
 
-        console.log(error);
+         console.log(error);
 
-        res.send("Register Error");
+        return res.send(error.message);
 
     }
 
 });
 
-//=====================================Login==========
+//=====================================Login======================================================================================
 
 app.get("/login", (req, res) => {
 
@@ -457,13 +478,24 @@ app.post("/login", async (req, res) => {
 
             }
 
-            req.session.userId = admin._id;
+              req.session.userId = admin._id;
+              req.session.role = "Admin";
 
-            req.session.role = "Admin";
+              req.flash("success", "Login Successful");
 
-            req.flash("success", "Login Successful");
+               return req.session.save((err) => {
 
-           return res.redirect("/dashboard");
+                 if (err) {
+
+                            console.log("Session Save Error:", err);
+
+                             return res.redirect("/login");
+
+                            }
+
+                          return res.redirect("/dashboard");
+
+                      });
         }
 
         // ===== VOLUNTEER LOGIN =====
@@ -488,6 +520,7 @@ app.post("/login", async (req, res) => {
             volunteer.password
 
         );
+
 
         if (!isMatch) {
 
@@ -532,19 +565,21 @@ app.post("/login", async (req, res) => {
 
 });
 // ===================== FORGOT PASSWORD PAGE =====================
-app.get("/forgot-password", (req, res) => {
-    res.render("forgotPassword");
+app.get("/forgot-password", (req, res) => {res.render("forgotPassword");
+
 });
 
 // ================= SEND RESET LINK =================
 
 app.post("/forgot-password", async (req, res) => {
 
+
     try {
 
 	let user = await Volunteer.findOne({
-	    email: req.body.email
+	     email: req.body.email
 	});
+
 
 	let userType = "Volunteer";
 
@@ -553,6 +588,7 @@ app.post("/forgot-password", async (req, res) => {
 	    user = await Admin.findOne({
             email: req.body.email
 	    });
+
 
 	    userType = "Admin";
 	}
@@ -568,11 +604,13 @@ app.post("/forgot-password", async (req, res) => {
 
 	await user.save();
 
-        const resetUrl =  `http://localhost:3000/reset-password/${resetToken}`;
+
+
+          const resetUrl = `${process.env.BASE_URL}/reset-password/${resetToken}`;
 
         await transporter.sendMail({
 
-            from: "prabhatsakrigali@gmail.com",
+            from: process.env.EMAIL_USER,
 
 	    to: user.email,
 
@@ -661,6 +699,7 @@ app.post("/reset-password/:token", async (req, res) => {
 
         });
 
+
         if (!user) {
 
             user = await Admin.findOne({
@@ -683,6 +722,7 @@ app.post("/reset-password/:token", async (req, res) => {
             10
         );
 
+
         user.password = hashedPassword;
 
         user.resetPasswordToken = undefined;
@@ -690,6 +730,7 @@ app.post("/reset-password/:token", async (req, res) => {
         user.resetPasswordExpire = undefined;
 
         await user.save();
+
 
         res.send("Password Reset Successful");
 
@@ -933,7 +974,7 @@ app.post("/volunteer", upload.single("photo"), async (req, res) => {
 
 			await transporter.sendMail({
 
-			    from: "prabhatsakrigali@gmail.com",
+			    from: process.env.EMAIL_USER,
 
 			    to: "prabhatsakrigali@gmail.com",
 
@@ -1111,13 +1152,7 @@ app.get("/search-members", async (req, res) => {
 });
 
 //======================================= Grpup ===========================
-app.get(
-
-    "/groups",
-
-    allowRoles("Admin", "Leader"),
-
-    async (req, res) => {
+app.get("/groups",isAdminLoggedIn,allowRoles("Admin", "Leader"), async (req, res) => {
 
     try {
 
@@ -2430,14 +2465,9 @@ app.get( "/certificate/:id", isAdminLoggedIn, async (req, res) => {
 
 	        const baseUrl = process.env.BASE_URL;
 
-		console.log("Host =", req.get("host"));
-		console.log("Protocol =", req.protocol);
-
 		const qrData = `${baseUrl}/verify/${certId}`;
 
-                console.log("QR URL =", qrData);
-
-		const qrImage = await QRCode.toDataURL(qrData);
+                const qrImage = await QRCode.toDataURL(qrData);
 
         // CURRENT DATE
 
@@ -2729,7 +2759,7 @@ app.get(
 
 
 //========================================================
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

@@ -9,4 +9,4 @@ data:
   MONGO_HOST: "mongo-service"
   MONGO_PORT: "27017"
   DB_NAME: "ngoDB"
-
+  BASE_URL: "http://127.0.0.1:38737"
