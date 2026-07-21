@@ -1,9 +1,50 @@
+# ==========================
+# Dependencies
+# ==========================
 node_modules/
-.env
-uploads/
 
+# ==========================
+# Environment Variables
+# ==========================
+.env
+
+# ==========================
+# Uploads (Local Only)
+# ==========================
+uploads/
+public/resumes/
+
+# ==========================
+# Backup Server Files
+# ==========================
 server_backup.js
 server_backup_server.js
 server_mixed_backup.js
 
-public/resumes/
+# ==========================
+# Backup Archives
+# ==========================
+*.zip
+*.tar.gz
+
+# ==========================
+# Temporary Files
+# ==========================
+node
+ngo-website@1.0.0
+
+# ==========================
+# OS / Editor Files
+# ==========================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ==========================
+# Logs
+# ==========================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
